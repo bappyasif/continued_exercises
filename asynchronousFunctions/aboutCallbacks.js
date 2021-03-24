@@ -168,10 +168,133 @@ function callback(val) {
 let fruits = ["apples", "pears"];
 fruits.forEach(callback);
 
-// asynchronous callback
+// asynchronous callback using XMLHttpRequest()
 
-// fetch("./sample.json", jsonCallback);
-// // console.log(sampleData)
+// console.log(data, JSON.stringify(data.responseText));
+let httpRequest = new XMLHttpRequest();
+// httpRequest.responseType = "json";
+httpRequest.onreadystatechange = function () {
+  if (this.readyState === 4 && this.status === 200) {
+    console.log(JSON.parse(httpRequest.responseText));
+  } else if (this.readyState === 404) {
+    console.log(httpRequest.statusText);
+  }
+};
+httpRequest.response = "json";
+httpRequest.open("GET", "sample.json");
+// httpRequest.send();
+
+// refactoring above with callbacks function mobility
+httpRequest = new XMLHttpRequest();
+function httpCallback() {
+  if (this.readyState === 4 && this.status === 200) {
+    console.log(JSON.parse(httpRequest.responseText));
+  } else if (this.readyState === 404) {
+    handleError(httpRequest.statusText);
+  }
+}
+function handleError(error) {
+  console.log(error);
+}
+httpRequest.onreadystatechange = httpCallback;
+httpRequest.open("GET", "sample.json");
+// httpRequest.send();
+
+// lets induce Callbacks Hell, using chaining
+let xmlHttpRequest = new XMLHttpRequest();
+xmlHttpRequest.onreadystatechange = function () {
+  if (this.readyState === 4 && this.status === 200) {
+    // console.log(JSON.stringify(this.responseText));
+    // console.log(this.responseText);
+    console.log(JSON.parse(this.responseText));
+    // chaining callback
+    let httpRequest = new XMLHttpRequest();
+    httpRequest.onreadystatechange = function () {
+      if (this.readyState === 4 && this.status === 200) {
+        // console.log(JSON.parse(this.responseText));
+        // console.log(this.responseText);
+        console.log(JSON.parse(this.responseText));
+        // chaining callback
+
+        let http = new XMLHttpRequest();
+        http.onreadystatechange = function () {
+          if (this.readyState === 4 && this.status === 200) {
+            // console.log(JSON.parse(this.responseText));
+            // console.log(this.responseText);
+            console.log(JSON.parse(this.responseText));
+            // chaining callback
+          } else if(this.status === 404) {
+            console.log(this.statusText);
+          }
+        };
+        http.open("GET", "videos.json");
+        // http.send();
+      } else if(this.status === 404){
+        console.log(this.statusText);
+      }
+    };
+    httpRequest.open("GET", "friends.json");
+    // httpRequest.send();
+  }
+};
+xmlHttpRequest.open("GET", "sample.json");
+// xmlHttpRequest.send();
+
+// Refactoring above Callback simulation
+function request(url, cb) {
+  let xmlHttpRequest = new XMLHttpRequest();
+  xmlHttpRequest.onreadystatechange = function () {
+    if (this.readyState === 4) {
+      if(this.status === 200) {
+        cb(JSON.parse(this.responseText));
+      } else{
+        cb(this.statusText);
+      }
+    }
+    // if (this.status === 200 && this.readyState === 4) {
+    //   cb(JSON.parse(this.responseText));
+    // } else if(this.status === 404){
+    //   cb(this.statusText);
+    // }
+  };
+  xmlHttpRequest.open("GET", url);
+  xmlHttpRequest.send();
+}
+
+// request("sample.json", (data) => {
+//   httpCallback(data);
+//   request("friends.json", data => {
+//     httpCallback(data);
+//     request("videos.json", data => {
+//       httpCallback(data);
+//     });
+//   });
+// });
+// request("sample.json", tweets => {
+//   httpCallback(tweets);
+//   request("friends.json", friends => {
+//     httpCallback(friends);
+//     request("videos.json", videos => {
+//       httpCallback(videos);
+//     })
+//   })
+// })
+request("sample.json", (tweets) => {
+  request("friends.json", (friends) => {
+    request("videos.json", (videos) => {
+      httpCallback(tweets);
+      httpCallback(friends);
+      httpCallback(videos);
+    });
+  });
+});
+
+function httpCallback(response) {
+  console.log(response);
+}
+
+/**
+ * 
 function jsonCallback(data) {
   // if(err) console.log("error");
   // else console.log(data);
@@ -179,7 +302,6 @@ function jsonCallback(data) {
   console.log(data);
 }
 
-// fetch("sample.json").then(res => res.text()).then(data => jsonCallback(data))
 fetch("sample.json")
   .then((res) => res.json())
   .then((data) => jsonCallback(data));
@@ -225,3 +347,4 @@ function handleVideos(res) {
     .then((res) => res.json())
     .then((data) => console.log(data));
 }
+ */

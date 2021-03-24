@@ -51,6 +51,4 @@ things to notice here:
     <> sak more experienced coders to see examples of good modules until we have a good understandings of what a good module should look like, if it takes more than a minute to understand what's happenign in a module, probably it's not a very good module in that sense
 
 
-
-
-    
+Promises: there are multiple ways of dealing with asynchronous coding, Promise is one of such mechanism.
