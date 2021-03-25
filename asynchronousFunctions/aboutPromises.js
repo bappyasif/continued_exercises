@@ -100,3 +100,119 @@ getRequest("friends.json").then(
   (response) => success(response),
   (response) => failure(response)
 );
+
+// sometimes it's better to have async call outside of Promise call
+// returning a  promise from a given function is always better option, you can always rely on Promise
+// so, by simply calling Promise.resolve() or promisee.reject() would do same as wee would have done with "new" constructor call
+let userCache = {};
+function userDetail(username) {
+  // cached or not, alwasys a Promise will be returned from this given function
+  if (userCache[username]) {
+    // return a promise without have to use "new" constructor call
+    return Promise.resolve(userCache[username]);
+  }
+
+  // using fetch API to get information, fetch always returns a Promise
+  return fetch("users/" + username + ".json")
+    .then((res) => {
+      userCache[username] = res;
+      return res;
+    })
+    .catch((error) => {
+      throw new Error("no user being found: " + username);
+    });
+}
+// since a promise is always returned, we can use then() / catch() on its returned value
+
+// using "then"
+// all promise instances get a "then" method which allows us to deal with responsee accordingly
+// first "then" method callback recieves response given to it by first callback argument resolve() call
+new Promise((resolve, reject) => {
+  // a mock async action using setTimeout
+  setTimeout(() => resolve(11), 1100);
+}).then((res) => console.log(res));
+// "then" callback is activated when promise is resolved, "then" is also chainable
+new Promise((resolve, reject) => {
+  setTimeout(() => resolve(20), 1001);
+})
+  .then((res) => {
+    console.log(res);
+    return res * 2;
+  })
+  .then((res) => {
+    console.log(res);
+    return res * 3;
+  })
+  .then((res) => {
+    console.log(res);
+  })
+  .then((res) => console.log("??", res));
+// each "then" recieves response from previous "then"'s return value
+// if a promise has already been resolved but still "then" is called on, resolve() gets called
+// once promise is rejected and using then after it wouldn't fires off callback ever again
+
+// using "catch"
+// "catch" ccallback is executed when promise is rejected
+new Promise((resolve, rejected) => {
+  // setTimeout(() => rejected("done rejected"), 1001)
+  // throw "uh oh";
+  // setTimeout(() => {
+  //   throw new Error("done rejected")
+  // }, 1001)
+  setTimeout(() => {
+    rejected(Error("done rejected"));
+  }, 1001);
+})
+  .then((res) => console.log("succes", res))
+  .catch((error) => console.log("catch", error));
+
+// using "finally"
+// "finally" gets called regardless of promise resuted in resolve() or reject()
+new Promise((reolve, reject) => reject("fail"))
+  .then(() => console.log("success", res))
+  .catch(() => console.log("failed"))
+  .finally((res) => console.log("finally", res));
+// new Promise((reolve,reject) => reject(Error("fail"))).then(()=>console.log("success", res)).catch(()=>console.log("failed")).finally(res => console.log("finally", res));
+
+// using "Promise.all"
+// when multiple async actions are acted upon, and will be responded once all of them arre being resolved, promise.all come handy in those situations
+// it takes a n array of promises and fires one callback once they are all resolved
+/**
+ Promise.all([promise01, promise02]).then(res=> {
+  // resolved value /
+}).catch(error => {
+  // rejected value /
+});
+ */
+// better representation of it will be a scenario where mutiple ajax called ising fetch arre used all at once
+let req1 = fetch("sample.json");
+let req2 = fetch("friends.json");
+Promise.all([req1, req2]).then((res) => console.log(res));
+// all promises needs to be passed in order to show success message for any Promise.all()
+req1 = new Promise((resolve, reject) => {
+  setTimeout(() => resolve("done"));
+});
+// req2 =  new Promise((reject) => {
+//   setTimeout(() => reject("failed"));
+// });
+req2 = new Promise((resolve, reject) => {
+  setTimeout(() => reject("failed"));
+});
+Promise.all([req1, req2])
+  .then(() => console.log("success"))
+  .catch(() => console.log("caught"));
+
+// using "Promise.race"
+// instead of waiting for all promises to be resolved or rejected
+// Promise.race activates as soon as any promises in array is resolved or rejected
+req1 = new Promise((resolve, reject) => {
+  setTimeout(() => resolve("First Promise"), 2200)
+  // setTimeout(() => reject(Error("First Promise")), 1900);
+  // setTimeout(() => reject(Error("First Promise")), 2200)
+});
+req2 = new Promise((resolve, reject) => {
+  // setTimeout(() => resolve("Second Promise"), 2000)
+  setTimeout(() => reject(Error("Second Promise")), 2000)
+});
+// Promise.race([req1,req2]).then(res => console.log("Then : ",res)).catch((een,twee)=>console.log("Een: "+een, "Twee: "+twee));
+Promise.race([req1,req2]).then(res => console.log("Then : ",res)).catch((een,twee)=>console.log("Een: "+een, "Twee: "+twee));
