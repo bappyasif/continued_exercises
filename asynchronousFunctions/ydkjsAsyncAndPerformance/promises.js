@@ -202,10 +202,10 @@ let v2 = {hello: "world"};
     // fail to pass along any necessary enviroonment/parameters
     // swallow any errors/exceptions that may happen
 // characteristics of Promises are intentionally designed to provide usefful, repeatable answers to alll those concerns effectively
-// calling callback too early
+    // calling callback too early
 // where callback was prone to race conditions for task due to their asynchronicity, promise by definition cannot be succeptibel to this cconcern
 // Promise makes sure everything runs asynchronously, thus preventing Zalgo automatically
-// calling callback too late
+    // calling callback too late
 // callbacks are automatically scheduled when either resolve() or reject() gets called by Promise creation capability, those callbacks will predictably be fired at next asyncchronous moment
 // it's not possbile for a synchronous chain of tasks to run in such a way to account for any "delay" another callback from happening as expected
 // when a Promise is resolved, all then(..) registered callbacks on it will be called, in order, immediately at next available tick/asynchronous opportunity, nothing thayt happens in any of tthose chained callback can change or affect calling of other callbacks
@@ -219,7 +219,7 @@ p.then(function() {
     console.log("B");
 });
 // here "C" can not interrupt or precede "B", by virtue of Promises are defined, thus that snippet will ouutput in order A,B,C
-// Promise scheduling quirks
+    // Promise scheduling quirks
 // it's important to note thata there are lots of nuances of scheduling where relative ordering between ccllbacks chained off two separate Promises are not reliably predicted
 // if two promises are resolved, it shoulld also be true tthat p1.then(); p2.then() would mean p1 callback will run before p2 does, but there are subtle cases where that might not be true
 let p3 = new Promise(function(resolve, reject) {
@@ -236,4 +236,192 @@ p2.then(v => console.log(v));
 // resulting A,B not B,A
 // p1 has a another promise inside of it rather than just an "Immediate value" as P2 or P3 alone thus creating that effect of A,B not otherwise
 // to avoid such nuanced nightmares, we should never reply on anything about ordering/scheduling of callbacks across Promises, avoid it when we can
-// callback Never being calling
+    // callback Never being called
+// nothing can prevent a Promise from being notifying us of it's resolution, either of fullfilment or rejection callback will be called
+// what if Promise itself never gets resolved either way, even that is condition that Promises provide an answer for using higher level abstracctiono called "race"
+// a utility for timeout a Promise
+function timeoutPromise(delay) {
+  return new Promise((resolve,reject) => {
+    setTimeout(() => reject("Timedout"), delay);
+  });
+}
+// setup foo() with timeout
+Promise.race([foo(), timeoutPromise(2000)])
+.then(success, failure);
+function success() {
+  // foo(..) fulfiled in time
+}
+function failure() {
+  // foo(..) either rejected or didnt finish in time
+}
+// thus we can ensure a singal of eithr success or failure from foo() after timer expired, to prevent it from hanging our code indefenitely
+    // calling too Few or too Many times
+// by definition a callback should be called once, too few case would be zero calls or never being called
+// too many case is when a Promise creation code tries to call resolve(..) or reject(..) multiple times or tries to call both
+// Promise will only accept first resolution and will silently ignore any subsequent attempts of calling resolve() or reject()
+// as Promise can only be resolved once any then() registered callbacks will also be ever called just once for each of them
+    // failing to Pass Along any parameters/environment
+// as we know Promises can have at most one resolution value(fullfilment or rejection)
+// if we don;t explicitly resolve with a value either way it will be undefined, whatever that value is, will always be passed to all registered and appropriate callbacks either now or in future
+// something to be aware of, if we call resolve() or reject() with multiple parameters, all subsequent parameters after first will be silently ignored otherwise it will sonstitutes an invalid Promise mechnism and thus we are protected
+// so when required to pass along multiple parameters we should think of passing it along as an array or object and thus work around that notion
+// as for environement, functions can always retain their closures of scope in which theey're defined, so in that way we already covered from by virtue of JS not just Promise API
+    // swallowing any Errors/Exception
+// this is a restatement of previous point, when we reject a Promise with a reason, that value is passed along to rejection callback/s
+// but there is more to it, if any point in creation of Promise or observation of it's resolution a JS excption occurs, such as a Typeerror or ReferenceError, that will be cauught and force Promise to be rejected
+let p = new Promise((resolve, reject) => {
+  foo.bar(); // foo.bar() is not defined, so error!!
+  resolve(42); // it never gets here!!
+});
+p.then(fullfiled, rejected);
+function fullfiled() {
+  // Promise never gets here
+}
+function rejected(error) {
+  // error will be Typeerror exception from foo.bar()
+}
+// that JS exception from foo.bar() becomes a Promise Rejection that we can catch and respond to
+// it effectively solves another potential zalgo moment, whicch errors could create synchronous reaction and anything within Promise creation becomes an Asyn action thus reducing race condition immensely
+// what if a Promise is fullled but there's a JS exception during observation of it
+let p = new Promise((resolve, reject) => resolve(42));
+p.then(fullfiled, rejected);
+function fullfiled(msg) {
+  foo.bar();  //JS exception
+  console.log(msg);  //it never gets here
+}
+function rejected(err) {
+  // never gets here either!!
+}
+// it did seem like exception from foo.bar() did get swallowed, but it didn;t, cause there is something more to it, which is why we've failed to listen for it
+// p.then(..) call itself returns an another promise and that promise will be rejected with TypeError exception
+// why couldn't it just call rror handler defined there, because it would have been a violation of Promise construct, as P is already resolved and thus immutable and can't be chaanged to rejection when observing p's resolution
+    // Trustable Promise
+// as we've noticed that callbacks aren't gone from Promise rather where callback is passed to, instead of passing a callback into foo(..) we get something called Promise back from it and we pass callback to that Promise instead
+// why is Promise any more trustable than callbacks, isn't it just notion whrere Promise is already trusted thus we take this word for it
+// Promise has a solution for it as  well included in ES6 Promise API, within Promise.resolve()
+// when paassed in with immediate or non async values in a Promise.resolve() it will give us a Promise back with thatt valu as fullilment
+let p1 = new Promise((resolve,reject) => resolve(42));
+let p2 = Promise.resolve(42);
+// if pass a Promise to Promise.resolve() we get same Promise back
+let p1 = Promise.resolve(42);
+let p2 = Promise.resolve(p1);
+p1 === p2  // true
+// even more importantly if we pass along a non thenable value to Promise.reolve() it will try to unwrap until a concrete final non-Promise like value is extracted, as Promise.resolve() truns it into a Promise itslef
+let p = {
+  then: function(cb) {cb(42);}
+}
+// this works OK but only by chance!!
+p.then(function fulllfiled(val) {console.log(val);}, function rejected(err) {/*never runs */})
+// `this p is thenable but it's not a genuine Promise, it's reasonable as most will be, what if get something like this following
+let p = {
+  then: function(cb, errCB) {
+    cb(42);
+    errCB("muhahaha");
+  }
+};
+p.then(function fullfiled(val) { console.log(val); }, function rejected(err) {/* it shouldn't have run*/console.log(err); /* muhahaha */ })
+// as we can see p is not a Promise but behaves as if so, solution to that is Promise.resolve() will ensure it's a promise no mater what, so that we can trust, and if it's a Promise already we get that back so trusting either ways
+// don't just do this, when in doubt
+foo(42).then(v=>console.log(v));
+// instead do this, when in doubt
+Promise.resolve(foo(42)).then(v=>console.log(v));
+// Promise.resolve() is an easier way to normalize that function call into a wellbehaving async task, thus avoiding Zalgo makes much more better code
+
+// Trust Built
+// Promises are a pattern that arguments callbacks with trustable semantics
+// so that behavior is more reasonable and reliable by inverting Inversion of Control of callbacks
+// we place control with a trustable system as Promises that was desgined to bring sanity to asynchronous coding
+
+// Chain Flow
+// Promises are not just a mechanism for this-then-that, it's a building blok, we can string along multiple Promises together to represent a sequences of async steps
+// key to making this work is built on two behaviors intrisnsic to Promises
+    // everytime we call then() ona Promise, it creates and returns a new Promise which we can chain
+    // whatever value is returned from then() call's fullfilment callback's first parameter is automatically set as fullfilment of chained Promise from this point
+// let's understand what that means and then we'll look into it how that helps us create async sequences of flow control
+let p = Promise.resolve(21);
+let p2 = p.then(v=>{
+  console.log(v); //21
+  return v*2; // returns p2 with value of 42
+});
+p2.then(v=>console.log(v)); // prints 42
+// using chaining them together
+let p = Promise.resolve(21);
+p.then(v=>{
+  console.log(v);
+  return v*2;
+}).then(v=>console.log(v));
+// first then() is first step in this sequence, and next then() as next step and this could go so on and so forth by chainning off a previos then()
+// even if any of our step is another async calls, not just an immediate return statement and might require to wait before moving on to next, Promise.resolve() by definition solves that problem
+// same sort of unwrapping happens if we return a thenable or Promise from fulfillment or rejection handler
+let p = Promise.resolve(21);
+p.then(v=> {
+  console.log(v);
+  // creates and returns Promise
+  return new Promise((resolve,reject)=>resolve(42));
+}).then(v=>console.log(v));
+// event though we wrapped up 42 in a Proomise it stilll got unwrapped as a fulfillment of chained Promise such that next then() recieves value of 42 from that, also same goes with asynchronous calls as well
+let p = Promise.resolve(21);
+p.then(v=> {
+  console.log(v);
+  return new Promise((resolve, reject) => {
+    setTimeout(()=>resolve(v * 2), 2000)
+  });
+}).then(v=>console.log(v));
+// that's incredibly powerful tool, now we can construct a sequence of however many async steps as we want,  and each steep can delay next or not as necessary
+// if we dont explicitly return value in chained Promise call, it will get "undefined" as value but still will be chained together, each Promise resolution is thus a signal to proceed to next step
+// to further chain illustration, let;s generalize a delay promise cration into a utility we can reuse for multiple steps
+function delay(time) {
+  return new Promise((resolve,reject)=> {
+    setTimeout(()=>resolve, time);
+  });
+}
+delay(110)
+.then(()=> {
+  console.log("STEP 2 after 110ms");
+  return delay(200);
+}).then(() => {
+  console.log("STEP 3 after another 200ms");
+  return delay(44);
+}).then(() => {
+  console.log("STEP 2 after another 44ms");
+  return delay(56);
+}). then(() => {
+  console.log("STEP 2 after another 56ms")
+})
+// technically there are two promises in those interchanges, first 200ms-delay promise and chained promise that preceding then() chains from, but it's easier to picture them as a single entitiy for simplicity
+// Promise-aware ajax
+function request(url) {
+  return new Promise((resolve,reject) => {
+    // ajax() callback should be our Promise resolve() function
+    ajax(url,resolve)
+  });
+}
+// in action using above
+request("some.url.1").then(res => {
+  return request("some.url.2?v="+res)
+}).then(res => console.log(res));
+// after creating first request() with first url and chained off that returned promise with then()
+// once reponse come back from preceding request(), here we constructed our second request url response coming from first call and then using a second request() there so that in next then() call we get value from it
+// Promise chain is not only a flow control that expresses a multistep async sequence, it also acts as a message channel to propagate messages from step to step
+// what if something went wrong in Promise sequence, an error exception is on a per person basis, whicch means it's possible to catch such an error at any point in chain, catching sorts of reset sequence back to normal at that point
+request("some..url.1")
+.then(res => {
+  foo.bar();  // undefined error
+  // never runs
+  return request("some.url.2?v="+res);
+}).then(
+  res => {/*never runs*/},
+  err=> {
+    console.log(err); // TypeError from foo.bar()
+    return 42;
+}).then(msg => console.log(msg)) // prints 42
+// when errror occurs in step 2 rejection handler in sttep 3 catches it and returns value of 42 which later on prints in step 4 as such, and now back in fulfillment state
+// when returning a Promise from fulfillment handler it might be delayed same goes for error handlers too
+// if we call then() on a promise and only passed a fulfillment handler and assumeed rejection handler is substituted
+let p = new Promise((resolve, reject) => reject("oops"));
+let p2 = p.then(function fulfilled() {
+  // never runs
+  },
+  // assumed rejection handler if ommitted or anyother valuee is passed instead
+);
+// p2 is getting simply rethrown error from first chain, and will continue to propaget along chain until an explicitly defined rejection handler is encountered
