@@ -425,3 +425,205 @@ let p2 = p.then(function fulfilled() {
   // assumed rejection handler if ommitted or anyother valuee is passed instead
 );
 // p2 is getting simply rethrown error from first chain, and will continue to propaget along chain until an explicitly defined rejection handler is encountered
+// if a proper valid function is not passed as fulfillment handler parameter to then(), there's also a default handler substituted
+let p = Promise.resolve(42);
+p.then(
+  // assumed fulfillemnt handler, if omitted or anyother non function value passed, v=>v
+  null,
+  err => {
+    // never runs
+  }
+);
+// default fulfillment handler simply passes whatever value it recieves along to next step(Promise)
+// then(null,err=>..) pattern only handling rejections, if any, but letting fulffillments pass through, also has a shortcut then(err=>..)
+// intrisic behaviors of Promises that enable us chaining fllow control
+// <> a then() call against one Promise automatically produces a new Promise to return from that call
+// <> inside fulfillment/rejection handlers, if you return a value or an exception is thrown, that new returned (chainable) Promise is resolved accordingly
+// <> if fulfillement or rejection handler returns a Promise, it is unwrapped, so whatever it's resolution is will become resolution of chained Promise returned from current then()
+// Prommises normalize asynchrony and encapsulates time dependent value state, that is what lets us chain them together in such useful way of flow control
+// certainly sequential expressivenes of chain is big improvment over tangled mess off callbacks, but there is still a fair amount of then() and handler functions to wade through
+
+// Terminology: Resolve, Fulfill and Reject
+let p = new Promise((x,y) =>{
+  // x() is for fulfillemnt
+  // y() is for rejection
+})
+// first parameter is usually used to mark Promise as fulfilled, and second always marks promise as rejected
+// words that we use naming those handler unctions can not only affect how we think about code but also how other devlopers will think about it, thinking wrongly is surely going to be worse than spaghetti callback alternatives
+//  it is customary to use resolve() and reject() for those two handler functions respectively, event though reject() seems very starightforward but resolve() can get tricky sometimes, as it is fulfilling a Promise, why not use fulfill() instead
+let fulfilledPr = Promise.resolve(42);
+let  rejectedPr = Promise.reject("oops");
+// fulfilledPr gets non thenable value, where rejectedPr gets  reason "oops"
+// now lets see why resolve() is unambiguous and mmore accurate, if used explicitly in a context that could result in either fulfillemnt or rejection
+let rejectedTh = {
+  then: function(resolved,rejected) {
+    rejected("oops");
+  }
+};
+let rejectedPr = Promise.resolve(rejectedTh);
+// Promise.resolve() is a good accurate name for API method, because it can result in ither fulfillment or rejection
+// first callback parameter of Promise constructor will unwrap either a thenable, identical to Promise.resolve(), or a genuine Promise
+let rejectedPr = new Promise((resolve,reject) => resolve(Promise.reject("oops")));
+rejectedPr.then(()=>{/*never runs*/}, err => console.log(err)) //  prints "oops"
+// we can see resolve() is mucch more appropriate name for first callback parameter of Promise() constructor
+// reject() does not do unwrapping ways that resolve() does, if we pass a Promise/thenable value to reject() that untoucched value will be set rejection reason, a subsequent rejection handler would recieve actual Promise/thenable not underlying immediate value
+// it's been suggestd to use fulfilled() and rejected() to be name as then() callback parameters respectiively
+function fulfilled(msg) {console.log(msg)}
+function rejected(err) {console.log(err)}
+p.then(fullfiled, rejected);
+// first prameter to then(), is unambiguously always fulfillment, so there is no duality of resolve terminology, ES6 use onFulfilled() and onRejected() to label those two callbaks, so they are accurate terms
+
+// Error Handling
+// synchronous way error handling with try..catch doesnt work with asynchronous code pattern
+// even though error first ppatten from callbacks  for error handling is async capable but it doesn't compose well at all, with  mutipple levels of error first callbacks woven togther will inevitably lead to perils of callback hell
+// error handling in Promise using rejection handler passed to then() is a lot more cleaner way of doing such async operations
+// Promises don't use error first callback rather uses "split callbacks" style, where one for fulfillment and other for rejection
+let p = Promise.reject("Opps");
+p.then(
+  function fulfilled() {
+  // never runs
+  },
+  function rejected(err) {
+    console.log(err); // Opps
+  }
+);
+// while this patern seems make fine sense on surface, nuances of Promise error handling are often bit more difficult to fully grasp
+let p = Promise.resolve(42);
+p.then(
+  function fulfilled(msg) {
+    // numbers dont have string function, so it will throw an error
+    console.log(msg.toLowerCase());
+  },
+  function rejected(err) {
+    // it never gets here!!
+  }
+);
+// as P is resolved already, error thrown in p.then() won't be able to change P is alresolved value as it becomes immutable to other chains
+// but can be caught in any subsequent then() class rejection handler, as current then() will return an Error will be caught by any rejection handler there of in chain
+// if we use Promise API in an invalid way and an error occurs that prevents proper Promise construction, then result will be an immediately thrown exception, not a rejected Promise
+// we can;t get a rejected Promise if we dont use Promise API validly enough to actually construct a Promise beforehand
+
+// Pit of Despair
+// it's phenomenon where accidents are punished and we have try harder to get it right, but rather try too create a "pit od success" where we have to try harder to fail
+// Promise error handing is unquestionably "pit of despair" design, by design it assumes we want any errors to be swallowed by Promise state, and when failed in observing that error dies in obscurity, usually despair
+// to avoid loosing an error go silenced or discarded Promise, developers have claimed that having catch() at end of chain woud have handle that issue
+p = Promise.resolve(42);
+p.then(
+  function fulfilled(msg) {console.log(msg.toLowerCase())}
+).catch(errorHandler);
+// looks like that solved it right, but whaat if errorHandler itself has an error that would go unobserved and unattended, sticking another catch() and of chain wouldn't necessarilty resolve that but  will reduce errors going unnticed for sure, still there remains a possiblity of any unattended errors
+
+// Uncaught Handling
+// it's not an easy problem to solve completely, there are ways to approach this that many would say better
+// some libraries have added methods for registering a "global unhandled rejection" handler, which would be called instead of a globally thrown error, but their solution for how to identify an error has ambiguity in it and thus remaains possibility of remain "uncaught"
+// another common suggestion is that Promises should have a done(..) added to them, which essentiallly marks Promise chain as "done", doesn;t create and return a Promise, so it's not wiredup to report problems to a chained Promise that doesnt exist, it ratheer throws a global uncaught error in console
+p = Promise.resolve(42);
+p.then(
+  function fulfilled(msg) {console.log(msg.toLowerCase())}
+).done(null, errorHandler) // if errorHandler caused it's own exception, it would be thrown globally here
+// this might sound more attractive than never ending chain or arbitary timeouts, but it's not a part o ES6 standard, it's ar way off from being reliable and ubiquitous solution
+// browsers have a unique capability that our code does not have, they can for sure track any Promise objects, whenever they get garbage collected if they have a rejection in them browsers can report in console confidently, though support is incomplte at best until 2018ish
+
+// Pit of Success
+// this following is just theoritical, as in how Promises could be someday changed to behave,  it shuld be somtthing more superior to what we currently have
+// <> Promises could default to reporting any rejection in console on next Job or event loop tick, if no error handler has been registered for Promise at that time
+// <> for cases where a rejected Promise would hold onto its rejected state for an indefinite amount of time before observing
+// if a Promise is rejected, it defaults noisily in console rather defaulting silently, we might be ablee to opt ouut of that reporting implicitly bby registering a Error handler, or Explicitly using defer(), in either case we would be able to control false positives
+p = Promise.reject("oops").defer();
+// foo() is promise aware
+foo(42)
+.then(
+  function fulfilled() {
+    return p;
+  },
+  function rejected(err) {
+    // handle foo(..) error here
+  }
+);
+// as we can see in Promise creation we used defer() for rejection, which woulld mean it would wait a while to use or observe it rejection, thus no global reporting, defer() simply return same prommise for chaining purposes
+// promise returned from foo(..) gets an error handler attached right away, so implicitly opted out and no global reporting for it occurance either
+// but promise returned from then(..) call has no defer or errorHandler attahed so if it rejects from either resolution handler, it will be reported to console as an uncaught error
+// this design is a pit of success, by default all errors are ither handled or reported, what alll developers would expect, unless we defer it in a Promise and left un observed than it's on us but will be hard thing to miss
+
+// Promise Patterns
+// there are Promise patterns other than "Sequence", these patterns serve to simplify expression of async flow control, which makes our code reasonable and more maintainable
+// <> Promise.all([..])
+// <> Promise.race([..])
+
+// Promise.all([..])
+// it's about doing two or more steps concurrently/parallel, in classic programming terminology a "gate" is a mechanism that awaits oon two or more parallel/cooncurrent tasks to complete before continuing, in Promise API we call this patteren all([..])
+p1 = request("some.url.1");
+p2 = request("some.url.2");
+Promise.all([p1,p2]).then(
+  msgs => {
+    return request("somme.url.3?v="+msgs.join(","))
+  }
+).then(msg=>console.log(msg));
+// Promise.all([..]) expects an array, consisting generally of Promise instances, promise returned from it will recieve a fulfillment message for all those Promises from that array
+// array of valuees thaat passed into Promise.all([..]) can include Promises or even immediate values, each value is essentially went through Promise.resolve() to make sure it's a genuine promise
+// an immediate value will be normalized ito a Promise, if that array is empty main Promise is immediately fulfilled
+// main promise returned from Promise.all([..]) will only be fulfilled when all it's constituent promises are fulfilled, if any of them is rejected main Promise.all([..]) is also rejected, discarfing all results from other promises, always attach a rejection/error handler to every promise and also promise that's comes from Prommise.all([..])
+
+// Promise.race([..])
+// sometimes we only want to respond to first promise to cross finish line and letting other promises fall away,  this patern is classically known as "latch" but in Promies it's called "race", "race" is not "race condition", which is a bug and should always be avoided
+// Promise.race([..]) also expects an array, containing one or more Prommiss or thenables or immediate values, vn though immediate values doesn't really fit into "race" in practical sense, as first of those immediatee values will be winner
+// Promise.race([..]) will fulfill if and when any promise resolution is a fulfillment, and it will reject if and when any Promise reolution is rejection
+// a "race" requires at least one "runner", so when an empty array is passed , main Promise.race([..]) will never resolve, so never leave an empty array to Promise.race([..])
+p1 = request("some.url.1");
+p2 = request("some.url.2");
+Promise.race([p1,p2]).then(
+  msg => {
+    return request("somme.url.3?v="+msg)
+  }
+).then(msg=>console.log(msg));
+// as only one proomise wins,  fulfillment value is a single message, not an  array as it was for Promise.all([..])
+
+// Timeout Race
+// Promise.race([..]) can be used to express "promise timeout" pattern
+Promise.race([
+  foo(),
+  timeoutPromise(2000)
+]).then(
+  function() {/* foo() fulfiled in time */},
+  function(err) {/* either foo() didnt finish in tim or rejected, inspect "err" to know */}
+);
+
+// Finally
+// Promises cannot be cancelled,so they can only be silently ignored
+// finally() callback in a Promise aalways gets called when a promise resolves and allows us to specify any clean up is necessary,  avaiilable from ES7+
+p = Promise.resolve(42);
+p.then(something)
+.finally(cleanup)
+.then(another)
+.finally(cleanup)
+// finally() still creates and returns a new Promise to keep chain going, aand if cleanup() also returns a Promise we could have potntial unhandled rejections
+// we could use a static helper utility which wil let is observe without interfering resolution of a Promise
+// polyfil safeguard
+if(!Promise.observe) {
+  Promise.observe = function(pr,cb) {
+    // side observe "pr" resolution
+    pr.then(
+      function fulfilled(msg) {
+        // schedule callback as async
+        Promise.resolve(msg).then(cb);
+      },
+      function rejected(err) {
+        // schedule callback as async
+        Promise.resolve(err).then(cb);
+      }
+    );
+    // return original Promise
+    return pr;
+  };
+}
+// using that above snippet
+Promise.race([
+  Promise.observe(
+    foo(),
+    function cleanup(msg) {
+      // cleanup after foo(), even if it didnt finish before time
+    }
+  ),
+  timeoutPromise(2000)
+]);
+// Promise.observe() helper is just an illustration off how we can observe completions of Promises without interfering with them, just be sure Prommises are not just silntly ignored by accident

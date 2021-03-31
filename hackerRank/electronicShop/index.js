@@ -3,7 +3,7 @@ function getMoneySpent(ks, ds, budget) {
     ks.forEach(k => {
         ds.forEach(d=> {
             if((k+d) <= budget) {
-                console.log(k+d);
+                // console.log(k+d);
                 maxs.push(k+d);
             }
         })
@@ -13,7 +13,8 @@ function getMoneySpent(ks, ds, budget) {
 }
 
 output = getMoneySpent([40,50,60], [5,8,12], 60);
-output = getMoneySpent([5,1,1], [4], 5);
+// output = getMoneySpent([5,1,1], [4], 5);
+output = getMoneySpent([4], [5], 5);
 console.log(output);
 
 
