@@ -627,3 +627,68 @@ Promise.race([
   timeoutPromise(2000)
 ]);
 // Promise.observe() helper is just an illustration off how we can observe completions of Promises without interfering with them, just be sure Prommises are not just silntly ignored by accident
+
+// Variations on all([..]) and race([..])
+// while native ES6 Promises come with built in Promise.all([..]) and Promise.race([..]), there are several other commonly used patterns availablee on those variations
+// <> none([..]) is like all([..]) but fulfillment and rejections are transposes, all Promise needs to be rejected,, rejections become fulfillment value on those semantics
+// <> any([..]) is like all([..]), but it ignores any rejections, so just one of those Promises needs to be fulfilled instad of all of them
+// <> first([..]) is like a race with any([..]), where it ignores any rejections and fulfills as soon as first Promise fulfills
+// <> last([..]) is like first([..]) except it allow latest fulfills to be a winner
+// some promise abstraction libraries provide these, but we could also define them ourselves as well using mechanics of Promises, such as race([..]) and all([..])
+// let's look at how we could defie first([..]) by ourselves
+// polyfilll safe guard check
+if(!Promise.first) {
+  Promise.first = function(prms) {
+    return new Promise((resolved, reject) => {
+      // looping through all promises
+      prms.forEach(pr=>{
+        // normailize Promises
+        Promise.resolve(pr)
+        // by definition whichever finishes first wins
+        .then(resolved)
+      });
+    }).catch(err => {/*something's wrong, look error */});
+  };
+}
+// though that above implementation of first([..]) doesn't really haandle any rejections so if all of those promies are rejected that would simply hang, that's using catch should reduce that probablity of hanged if all goes as intended
+
+// Concurrent Iterations
+// sometimes we might want to iterate over a list of Promises and performs some task against all of them, which can be easily done using synchronous array methods
+// if task is however async or/can run concurrently we can use async version of these utilities
+// lets consider an asynchronnous map(..) utility that takes an array of promises/else along with a callback function to preform against each promises
+// utility method map(..) itself returns a prmoise whose fulfillment value is an [array] that holds same mapping order for aasync fulfillment from each promise array task
+// polyfill safe guard check
+if(Promise.map) {
+  Promise.map = (prms, cb) => {
+    //  new Promise that awaits for all mapped promises
+    return new Promise.all(
+      // regular arr.map() turns [prms] into an array of Promises
+      prms.map(val => {
+        return new Promise((resolve,reject) => {
+          cb(val, resolve);
+        }).catch(err => {/* something's wrrong, look error */});
+      })
+    );
+  };
+}
+// in that implementation we can't signal asyn rejection outside [prms].map(..) returning Promises
+// let looks at it from Promises perspective rather that just [prms] simplee array values
+p1 = Promise.resolve(21);
+p2 = Promise.resolve(42);
+p3 = Promise.reject("oops");
+p4 = Promise.resolve("oops");
+// those Prommise vslus are both in list of promise array's and Promises thmselves
+Promise.map([p1,p2,p3,p4], function(pr, callbackDone) {
+  // making sure of Promise, by normalizing it ofcourse
+  Promise.resolve(pr)
+  .then(
+    // extract value from it
+    function(v){
+      // v(callbackDone(v*2));
+      callbackDone(v*2);
+      
+    },
+    // // or map to Promise rejection message 
+    callbackDone
+  ).catch(err => {/* something's wrong, look error */})
+}).then(vals => console.log(vals));
