@@ -826,3 +826,143 @@ Promise.map([p1,p2,p3,p4], function(pr, callbackDone) {
   // or even better function parameter destructuring
   Promise.all(foo(10,20))
   .then(([x,y]) => console.log(x,y));
+  // <> Single Resolution
+  // a Promise can be resolved (fulfillment/rejection) once, for many async use case, we'll be retrieving a value once, so this works fine
+  // but there are also different other async models, which is more akin to events or streams of data
+  // without a significant abstraction on top of Promises, it's unclear how Promises can fit into that use cases, they  will mmost likely to fall short for handling mutiple value resolution
+  // let's consider a situation where a event firing sets motion in sets of async tasks, and that event can happen multiple times, like a button click
+  // here in this example, click(..) binds "click" event to a DOM element
+  let p = new Promise((resolve,reject) => click("#btnEl", resolve));
+  p.then(evt => {
+    let btnID = evt.currerntTarget.id;
+    return request("some.url?id="+btnID);
+  }).then(text => console.log(text));
+  // this behavior only works for if button is clicked just once, when clicked again Promise p is already been resolved, so any resolve call after that will be ignored
+  // instead we'd probably need to invertthis paradigm, by creating a new Promise chain for each event firing
+  click("#btnEl", evt => {
+    let btnID = evt.currerntTarget.id;
+    request("some.url/?id="+btnID)
+    .then(text => console.log(text));
+  });
+  // this approach will work such that a new Promise sequence will be fired off for each "click" event on button
+  // but this design in some respect violets idea of Separation of concern capabilities
+  // we might very well be looking to define our event handler in a different place from where we code for how to respond to event
+  // that's pretty akward  to do this in pattern, without any  helper mechanisms
+  // <> Inertia
+  // a code base in motion with callbacks will remain so, unless acted upon by a Promise aware developer
+  // Promises offer a differnet paradigm, code can b anywhere from just a little diffrent to radically different, we have to be intetntional about it
+  // lets consider a callback based scenario like following
+  function foo(x,y,cb) {
+    ajax("some.url/?x="+x+"&y="+y, cb)
+  }
+  foo(11, 31, function(err, vals) {
+    if(err) {
+      console.log(err);
+    } else {
+      console.log(vals);
+    }
+  });
+  // to convert this into a Prommise aware code, we'd definitely need an Ajax Utility that is Promise aware, which we could request() as from eariler
+  // most Promise libraries do not offer a helper to convert a callback based code to Promise aware code, however imagine a helper like this following
+  if(!Promise.wrap) { // polyfill safe guard check
+    Promise.wrap = function (fn) {
+      return function() {
+        let args = [].slice.call(arguments);
+        return new Promise((resolve,reject) => {
+          fn.apply(
+            null,
+            args.concat(function(err, vals) {
+              if(err) {
+                console.log(err);
+              } else {
+                console.log(vals);
+              }
+            })
+          );
+        });
+      };
+    };
+  }
+  // that's more than just a tiny trivial utility, it takes a function that expectss an error first style of callback as its last parameter, and returns a function that creates a Promise to return, and substitutes callback for us with fulfillment/rejection
+  // let's see how that utility we would use in our code
+  let reqs = Promise.wrap(ajax);
+  reqs("some.url").then().catch();
+  // Promise.wrap() produces a function that will produce a Promise, it could be seen as "Promise factory", or "promisory" if we wish to call it
+  // this act of wrapping a callback function to be a Promise aware function is sometimes referred as "lifting" or "promisifying" as well
+  // so, Promise.wrap(ajax) produces an ajax() promisory that we call reqs(), and that promisory produces Promises for ajax responses
+  // let's look back to our earlier example, we need a promisory for both ajax() and foo()
+  let reqs = Promise.wrap(ajax) // a promisory for ajax()
+  // refactoring foo() keeping it externally callback based for compatibility with other parts of code, only using reqs()'s promise internally
+  function foo(x,y,cb) {
+    reqs("some.url/?x="+x+"&y="+y)
+    .then(
+      function fulfillled(vals) {
+        cb(null, vals);
+      },
+      cb
+    );
+  }
+  // now, for this code's purposes, making a promisory for foo()
+  let betterFoo = Promise.wrap(foo);
+  // and using this promisory
+  betterFoo(11,31)
+  .then(
+    function fulfilled(vals) {
+      console.log(vals);
+    },
+    function rejected(err) {
+      console.log(err);
+    }
+    );
+  // <> Promise Uncancelable
+  // once a promise is created and registered a fulfillment/rejection handler for it, there's nothing external we can do to stop that progreession if smetthing else happens to make that task moot or uncertain
+  // many developers wish Promises had natively desogned  with external cancelation capability
+  // but doing so would let a consumer/obbserver of a Promise affect someother consumer's ability to observe thhat same Promise
+  // which would violate future value's trustability, external immutability, but moreover a display of "action at a distant" anti pattern
+  // let's consider our Promise timeout scenario from earlier
+  let p = foo(42);
+  Promise.race([
+    p,
+    timeoutPromise(2000)
+  ]).then(
+    dosomething,
+    errorHandler
+  );
+  p.then(() => {/* still happens even in timeout case */})
+  // "timeout" was external to Promise p, so p itself keeps going which we probably don;t want
+  // a option could be is to invasivly define resolution callbacks
+  let OK = true;
+  let p = foo(42);
+  Promise.race([
+    p,
+    timeoutPromise(2000)
+    .catch(err=> {
+      OK = false;
+      throw err;
+    })
+  ]).then(
+    dosomething,
+    errorHandler
+  );
+  p.then(() => {
+    if(OK) {
+      // only happens if no timeout calls
+    }
+  });
+  // generally, we should try to avoid such scenarios, but if we can't we better look for Promise abstraaction libraries for assistance rather than hacking it, aas it's going to be a higher level of abstraction on top of Promises
+  // a single Promise is not a flow control mechanism display,  which is exactly what cancelation refers to, that's why Promise cancelation would feel akward
+  // by contrast, however, a chain of Promises taaken collectively together, a sequence, is a flow control expression and thus it's appropriate for cancelation to be defined at that level of abstraction
+  // no individual Promise should be cancelable, but it's sensible for a sequence to be cancelable, because we don;t pass around a sequence as aa single immutable value like we do with a Promise
+  // <> Promise Performance
+  // compared to untrustable cllbacks, where we have more works to do, more guards to protect, means that Promises are slower than callbacks, but how much slower though, is a qustion difficult to answer
+  // it an unattainable comparison really, and probably a wrong question to ask, rather comparing whether an ad hoc callbacck system with all those saame protections manually layered in is faster than a Promise implementation
+  // if Promises have a legitimate performance limitation, it 's more that they don't really offer a line-item choice as to which trustability protctions we might or not, we get them all, always
+  // nonetheless, Promise is generally a little slower than non-Promise, non trustable callback equivalent
+  // of course question here is, are these potntial slips in tiny fractions of performance worth all other articulated benefits of Promises we've seen so far, otherwise it's an anti pattern throwing away benfits of Promise trustability and composablity altogether
+  // maybe limitations is not actually their performance, but lack of prception of their benefits
+
+// Review
+// promises are awesome, use them
+// promises solve inversion of control issues that plagues us with callbacks only code
+// Promises don't get rid of callbacks, they just redirect orchestration of those callbacks to a trustable intermediary mechanism that sits between us and another utility
+// Promise chains also begin o address a better way of expressing async flow in sequential ffashion, which helps our brain plan and maintain async code beter
