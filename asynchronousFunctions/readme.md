@@ -52,3 +52,56 @@ things to notice here:
 
 
 Promises: there are multiple ways of dealing with asynchronous coding, Promise is one of such mechanism.
+
+Async/Await: Asynchronous code can be become difficult to reason about when it has a of things going on, "async" and "await" are two keywords that can help us make asynchronous code readability mor like synchronous code, this helps keep our code cleaner while  keeping benefits of asynchronous code.
+
+    Async Keyword
+    <> "async" keyword lets Javascript eengine know that we are declaring an asynchronous function, this is required to use "await" inside any function
+    <> when a function is declared with "async" keyword, it automatically returns a Promise
+    <> returning in an "async" function is same as resolving a Promise, likewise throwing an error will reject Promise
+    <> an important thing to understand is "async" functions are just syntactical sugar for Promises
+    <> "async" keywordcan also be used with any  of those ways a function can be created, said differently, it is valid to use an "async" function anywhere we can use a normal function
+    <> e.g.
+        let asyncFunc = async () => {
+            <!-- doing something asynchronous here -->
+            return result;
+        }
+
+        anArray.forEach(async item => {
+            <!-- doing something asynchronous here -->
+            <!-- we could also use .map() here to return an array of promises to use with Promise.all([..]) -->
+        })
+
+        server.getPeople().then(async people => {
+            people.forEach(person => {
+                <!-- doing something asynchronous here -->
+            })
+        })
+    
+    "await" keyword
+    <> "await" is pretty simple, it tells Javascript to wait for an asynchronous action to finish before continuing with function
+    <> "await" is like a 'pause until its done' kind of a keyword
+    <> "await" keyword is used to get a value from a function where we would normally use then(), instead of calling then() after asynchronous function, we would simply assign a variable to result using "await", then we can use that result in our code, as we would in a synchronous code
+
+    Error Handling
+    <> handling errors in "async" functions are very easy, Promises have catch() method for handling rejected promises, and since async functions just return a Promise, we can simply call that function and append a .catch() method to it
+    <> e.g.
+        asyncFunctionCall().catch(err => {
+            console.log(err);
+        });
+
+        there is another way, mighty try/catch block, if we wanted to handle error directlyy inside "async" function, we can use try/catch just like we  would in a synchronous code
+
+        async function getPersonINfo(name) {
+            try {
+                let people = await server.getPeople();
+                let person = people.find(person => {
+                    return person.name === name
+                });
+                return person;
+            } catch(err) {
+                <!-- handle if any error -->
+            }
+        }
+    <> doing this can look messy but it's a very easy way to handle errors without appending .catch() after our function calls
+    <> how we handle errors is upto us and which method we use is determined by how our code was written

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fetching Data</title>
+    <style>
+        body {
+            font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+        }
+        fieldset {
+            align-items: center;
+            width: 56vw;
+            background: greenyellow;
+        }
+        fieldset>div {
+            margin: 11px;
+        }
+        fieldset>div>input {
+            width: 100%;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: honeydew;
+        }
+        .gif-div {
+            margin: 11px;
+        }
+        img {
+            width: 56vw;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <fieldset>
+            <legend>Search For Gifs Here</legend>
+            <div>
+                <label for="gif-search">Enter Gif Search Term</label>
+                <input type="text" id="gif-search">
+            </div>
+            <div>
+                <button>Search Gifs</button>
+            </div>
+        </fieldset>
+        <div class="gif-div"></div>
+    </div>
+    <script src="index.js"></script>
+</body>
+</html>
