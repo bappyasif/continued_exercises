@@ -1,4 +1,123 @@
 function pickingNumbers(arr) {
+    let arrs = [];
+    for(let i = 0; i < arr.length; i++) {
+        let temp = [];
+        for(let j = 0; j < arr.length; j++) {
+            // console.log(arr[i], arr[j], arr[i] - arr[j])
+            if(arr[i] - arr[j] >= 0 && arr[i] - arr[j] <= 1) {
+                temp.push(arr[j]);
+            }
+        }
+        arrs.push(temp);
+        // temp = [];
+    }
+    let max = 0;
+    arrs.forEach(arr => {
+        if(arr.length > max) {
+            max = arr.length;
+        }
+    })
+    return max;
+}
+
+// output = pickingNumbers([4,6,5,3,3,1]);
+output = pickingNumbers([1,2,2,3,1,2]);
+console.log(output);
+
+
+/**
+ * 
+ * 
+ function pickingNumbers(arr) {
+    let arrs = [];
+    for(let i = 0; i < arr.length; i++) {
+        let temp = [];
+        for(let j = i; j < arr.length; j++) {
+            if(arr[i] - arr[j] >= 0 && arr[i] - arr[j] <= 1) {
+                temp.push(arr[j]);
+            }
+        }
+        arrs.push(temp);
+        // temp = [];
+    }
+    let max = 0;
+    arrs.forEach(arr => {
+        if(arr.length > max) {
+            max = arr.length;
+        }
+    })
+    return max;
+    // return arrs;
+    // return subArr;
+}
+ * 
+ * 
+ function pickingNumbers(arr) {
+    let arrs = [];
+    for(let i = 0; i < arr.length; i++) {
+        let temp = [];
+        for(let j = i; j < arr.length; j++) {
+            if(arr[i] - arr[j] == 0) {
+                temp.push(arr[j]);
+            }
+            if(arr[i] - arr[j] == 1) {
+                temp.push(arr[j]);
+            }
+            // if(arr[i] - arr[j] > 0 && arr[i] - arr[j] <= 1) {
+            //     temp.push(arr[j]);
+            // }
+        }
+        arrs.push(temp);
+        temp = [];
+    }
+    return arrs;
+    // return subArr;
+}
+ * 
+ * 
+ function pickingNumbers(arr) {
+    let arrs = [];
+    for(let i = 0; i < arr.length; i++) {
+        let temp = [];
+        for(let j = i; j < arr.length; j++) {
+            // console.log(arr[i], arr[j]);
+            // if(arr[i] - arr[j] >= 0 || arr[i] - arr[j] <= 1) {
+            //     temp.push(arr[j]);
+            // }
+            if(arr[i] - arr[j] == 0) {
+                temp.push(arr[j]);
+            }
+            if(arr[i] - arr[j] > 0 && arr[i] - arr[j] <= 1) {
+                temp.push(arr[j]);
+            }
+        }
+        arrs.push(temp);
+        temp = [];
+    }
+    return arrs;
+    // return subArr;
+}
+ * 
+ * 
+ function pickingNumbers(arr) {
+    let counts = {}
+    for(let i=0; i<arr.length; i++) {
+        if(counts[arr[i]]) {
+            counts[arr[i]] += 1
+        } else {
+            counts[arr[i]] = 1;
+        }
+    }
+    let subArr =[];
+    for(let key in counts) {
+        let conv = key.repeat(counts[key]);
+        subArr.push(conv.split(""));
+    }
+    return subArr;
+}
+ * 
+ * 
+ function pickingNumbers(arr) {
     let counts = {}
     for(let i=0; i<arr.length; i++) {
         if(counts[arr[i]]) {
@@ -41,12 +160,6 @@ function pickingNumbers(arr) {
     // return counts;
     // return arr;
 }
-
-output = pickingNumbers([4,6,5,3,3,1]);
-console.log(output);
-
-
-/**
  * 
  * 
  function pickingNumbers(arr) {
