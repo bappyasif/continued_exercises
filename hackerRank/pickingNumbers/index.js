@@ -1,4 +1,42 @@
 function pickingNumbers(arr) {
+    let biggest = {};
+    arr.forEach((el,idx) => {
+        let subArr = arr.filter(val => el - val === 0 || el-val === 1);
+        console.log(subArr);
+        // if(subArr.length > biggest) biggest = subArr.length;
+        biggest[idx] = subArr;
+    });
+    
+    let maxLength = 0;
+    for(let key in biggest) {
+        let test = biggest[key].length;
+        if(test > maxLength) maxLength = test;
+    }
+    
+    return maxLength;
+    // return biggest;
+}
+
+output = pickingNumbers([4,6,5,3,3,1]); 
+output = pickingNumbers([1,2,2,3,1,2]);
+console.log(output);
+
+
+/**
+ * 
+ * 
+ function pickingNumbers(arr) {
+    let biggest = 0;
+    arr.forEach(el => {
+        let subArr = arr.filter(val => el - val === 0 || el-val === 1);
+        console.log(subArr);
+        if(subArr.length > biggest) biggest = subArr.length;
+    });
+    return biggest;
+}
+ * 
+ * 
+ function pickingNumbers(arr) {
     let arrs = [];
     for(let i = 0; i < arr.length; i++) {
         let temp = [], tempFiltered = [];
@@ -46,13 +84,6 @@ function pickingNumbers(arr) {
     })
     return max;
 }
-
-output = pickingNumbers([4,6,5,3,3,1]); 
-// output = pickingNumbers([1,2,2,3,1,2]);
-console.log(output);
-
-
-/**
  * 
  * 
  function pickingNumbers(arr) {
