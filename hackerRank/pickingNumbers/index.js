@@ -2,7 +2,7 @@ function pickingNumbers(arr) {
     let biggest = {};
     arr.forEach((el,idx) => {
         let subArr = arr.filter(val => el - val === 0 || el-val === 1);
-        console.log(subArr);
+        // console.log(subArr);
         // if(subArr.length > biggest) biggest = subArr.length;
         biggest[idx] = subArr;
     });
