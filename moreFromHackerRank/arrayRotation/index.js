@@ -1,6 +1,24 @@
 function circularRightArrayRotation(a, k, queries) {
   let rotating = [];
   let n = a.length;
+  for (let i = 0; i < k; i++) {
+    a.unshift(a.pop());
+  }
+  console.log(a);
+  rotating = queries.map((v) => a[v]);
+  return rotating;
+}
+
+// output = circularRightArrayRotation([3, 4, 5], 2, [1, 2]);
+output = circularRightArrayRotation([1, 2, 3], 2, [0, 1, 2]);
+console.log(output);
+
+/**
+ * 
+ * 
+ function circularRightArrayRotation(a, k, queries) {
+  let rotating = [];
+  let n = a.length;
   k = k % n;
   // let startIdx = (n - k) % n;
   let startIdx = n - k;
@@ -21,12 +39,6 @@ function circularRightArrayRotation(a, k, queries) {
   //   console.log(rotating);
   // return a;
 }
-
-output = circularRightArrayRotation([3, 4, 5], 2, [1, 2]);
-// output = circularRightArrayRotation([1,2,3], 2, [0,1, 2]);
-console.log(output);
-
-/**
  * 
  * 
  function circularRightArrayRotation(a, k, queries) {
@@ -87,5 +99,22 @@ console.log(output);
   }
   console.log(rotating);
   // return a;
+}
+ */
+
+/**
+ * 
+ * 
+ function circularRightArrayRotation(a, k, queries) {
+  let rotating = [];
+  let n = a.length;
+  for(let i = 0; i < n; i++) {
+    a[(i+k)%n] = a[i]
+  }
+  console.log(a);
+  for(let j of queries) {
+    rotating.push(queries[j]);
+  }
+  return rotating;
 }
  */
