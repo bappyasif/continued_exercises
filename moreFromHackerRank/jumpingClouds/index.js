@@ -4,7 +4,7 @@ function jumpingClouds(clouds, jump) {
   let idx = 0;
   do {
     idx = (idx + jump)%n;
-    console.log(idx);
+    // console.log(idx);
     if(clouds[idx] === 1) energy -= 2;
     energy--;
   } while(idx)
