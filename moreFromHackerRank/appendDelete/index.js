@@ -1,4 +1,87 @@
 function appendDelete(s, t, k) {
+  let maxOps = s.length + t.length;
+  if( k > maxOps) return "Yes";
+  let l = Math.min(s.length, t.length)
+  for (let i = 0; i < l; i++) {
+    if (s[i] !== t[i]) {
+      break;
+    }
+    maxOps -= 2
+  }
+  
+  return maxOps > k || (k - maxOps) % 2 !== 0 ? "No" : "Yes"
+}
+
+output = appendDelete("ashley", "ash", 2);
+output = appendDelete("aba", "aba", 7);
+output = appendDelete("hackerhappy", "hackerrank", 9);
+output = appendDelete("abc", "def", 6);
+console.log(output);
+
+/**
+ * 
+ * 
+ function appendDelete(s, t, k) {
+  let maxOps = s.length + t.length;
+  if( k > maxOps) return "Yes";
+
+  for (let i = 0, l = Math.min(s.length, t.length); i < l; i++, maxOps -= 2) {
+    if (s[i] !== t[i]) {
+      break;
+    }
+    // count = (s.length - i) + (t.length - i);
+  }
+  
+  return maxOps > k || (k - maxOps) % 2 !== 0 ? "No" : "Yes"
+  //   console.log(temp);
+}
+ * 
+ * 
+ function appendDelete(s, t, k) {
+  let temp = "";
+  let count;
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] === t[i]) {
+      temp += s[i];
+    } else {
+      break;
+    }
+    // count = (s.length - i) + (t.length - i);
+  }
+  
+  if(k >= temp.length ) return "Yes"
+
+  if (temp.length <= k && temp.length%2 === k%2) {
+    return "Yes";
+  }
+
+  return "No";
+  //   console.log(temp);
+}
+ * 
+ * 
+ function appendDelete(s, t, k) {
+  let temp = "";
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] === t[i]) {
+      temp += s[i];
+    } else {
+      break;
+    }
+  }
+  
+  if (temp.length > k) return "No";
+
+  if (t.length - temp.length <= k) {
+    return "Yes";
+  }
+
+  return "No";
+  //   console.log(temp);
+}
+ * 
+ * 
+ function appendDelete(s, t, k) {
   let temp = "";
   for (let i = 0; i < s.length; i++) {
     if (s[i] === t[i]) {
@@ -35,14 +118,6 @@ function appendDelete(s, t, k) {
   return "No";
   //   console.log(temp);
 }
-
-// output = appendDelete("ashley", "ash", 2);
-// output = appendDelete("aba", "aba", 7);
-// output = appendDelete("hackerhappy", "hackerrank", 9);
-output = appendDelete("abc", "def", 6);
-console.log(output);
-
-/**
  * 
  * 
  function appendDelete(s,t,k) {
