@@ -28,6 +28,15 @@ module.exports = {
         clean: true,
         publicPath: '/'
     },
+    // optimization: {
+    //     runtimeChunk: 'single',
+    // },
+    // optimization: {
+    //     splitChunks: {
+    //         chunks: 'all',
+    //     },
+    // },
+    // optimization: {chunkIds: 'named'},
     module: {
         rules: [
             {

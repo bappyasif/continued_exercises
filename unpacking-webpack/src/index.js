@@ -6,6 +6,36 @@ import Data from '../resources/data.xml';
 import DataJson5 from '../resources/data.json5';
 import printMe from './print.js';
 
+// with lazy loading aspect
+// function component() {
+//     const element = document.createElement('div');
+
+//     const button = document.createElement('button');
+//     const br = document.createElement('br');
+
+//     button.innerHTML = 'Click me and look at the console!';
+//     element.innerHTML = _.join(['Hello', 'webpack'], ' ');
+//     element.appendChild(br);
+//     element.appendChild(button);
+
+//     // Note that because a network request is involved, some indication
+//     // of loading would need to be shown in a production-level site/app.
+//     button.onclick = e => import(/* webpackChunkName: "print" */ './print').then(module => {
+//         const print = module.default;
+
+//         print();
+//     });
+
+//     console.log(Data, DataJson5);
+//     // console.log(Notes);
+
+//     return element;
+// }
+
+// document.body.appendChild(component());
+
+
+// until asset management tutorial
 function component() {
     const element = document.createElement('div');
 
